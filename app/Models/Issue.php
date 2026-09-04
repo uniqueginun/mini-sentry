@@ -215,6 +215,29 @@ class Issue extends Model
     }
 
     /**
+     * @param  Builder<Issue>  $query
+     * @return Builder<Issue>
+     */
+    #[Scope]
+    protected function forTeam(Builder $query, Team $team): Builder
+    {
+        return $query->whereIn(
+            $query->qualifyColumn('project_id'),
+            $team->projects()->select('id'),
+        );
+    }
+
+    /**
+     * @param  Builder<Issue>  $query
+     * @return Builder<Issue>
+     */
+    #[Scope]
+    protected function open(Builder $query): Builder
+    {
+        return $query->where('status', '!=', IssueStatus::Resolved);
+    }
+
+    /**
      * The start of the 24 hourly buckets shown on issue graphs.
      */
     public static function sparklineWindowStart(): CarbonInterface

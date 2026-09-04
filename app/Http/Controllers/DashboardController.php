@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Dashboard\GetDashboardOverview;
+use App\Models\Team;
 use App\Models\TeamInvitation;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,7 +11,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, Team $current_team, GetDashboardOverview $overview): Response
     {
         $email = strtolower($request->user()->email);
 
@@ -33,6 +35,7 @@ class DashboardController extends Controller
 
         return Inertia::render('dashboard', [
             'pendingInvitations' => $pendingInvitations,
+            ...$overview->handle($current_team),
         ]);
     }
 }

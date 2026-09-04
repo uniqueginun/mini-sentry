@@ -35,6 +35,13 @@ class IssueResource extends JsonResource
                 ? $this->latestEvent?->environment
                 : null,
             'sparkline' => $this->sparkline(),
+            'project' => $this->whenLoaded(
+                'project',
+                fn (): array => [
+                    'id' => $this->project->id,
+                    'name' => $this->project->name,
+                ],
+            ),
         ];
     }
 

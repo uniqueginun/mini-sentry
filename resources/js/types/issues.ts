@@ -81,3 +81,13 @@ export type ProjectSummary = {
     id: number;
     name: string;
 };
+
+export type DashboardStats = {
+    unresolved_issues: number;
+    events_last_24h: number;
+    affected_users: number;
+};
+
+export type DashboardIssue = IssueListItem & {
+    project: ProjectSummary;
+};

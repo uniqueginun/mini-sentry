@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -71,6 +73,19 @@ class Event extends Model
     public function tags(): HasMany
     {
         return $this->hasMany(EventTag::class);
+    }
+
+    /**
+     * @param  Builder<Event>  $query
+     * @return Builder<Event>
+     */
+    #[Scope]
+    protected function forTeam(Builder $query, Team $team): Builder
+    {
+        return $query->whereIn(
+            $query->qualifyColumn('project_id'),
+            $team->projects()->select('id'),
+        );
     }
 
     /**
