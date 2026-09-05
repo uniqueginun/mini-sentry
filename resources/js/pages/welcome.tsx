@@ -1,6 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
+    Check,
     CircleCheck,
+    Copy,
     FolderKanban,
     GitBranch,
     KeyRound,
@@ -10,7 +12,26 @@ import {
 import AppLogoIcon from '@/components/app-logo-icon';
 import SeverityBadge from '@/components/issues/severity-badge';
 import { Button } from '@/components/ui/button';
+import { useClipboard } from '@/hooks/use-clipboard';
 import { dashboard, home, login, register } from '@/routes';
+
+const composerRepositories = `{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/uniqueginun/mini-sentry-sdk"
+        }
+    ]
+}`;
+
+const composerPackage = `"uniqueginun/minsent-sdk": "v1.0.3"`;
+
+const composerRequireCommand =
+    'composer require uniqueginun/minsent-sdk:v1.0.3';
+
+const envVars = `MINISENTRY_API_URL=http://mini-sentry.sh
+MINISENTRY_API_TOKEN=
+MINISENTRY_RELEASE=`;
 
 const features = [
     {
@@ -59,9 +80,9 @@ const steps = [
     },
     {
         step: '2',
-        title: 'Send an event',
+        title: 'Install the SDK',
         description:
-            'POST to /api/events with your Bearer token. Events are grouped into issues automatically.',
+            'Add uniqueginun/minsent-sdk to your Laravel app, then point it at your project key.',
     },
     {
         step: '3',
@@ -114,6 +135,9 @@ export default function Welcome() {
                         </Link>
 
                         <nav className="flex items-center gap-2">
+                            <Button variant="ghost" asChild>
+                                <a href="#installation">Install</a>
+                            </Button>
                             {auth.user ? (
                                 <Button asChild>
                                     <Link href={dashboardUrl}>Dashboard</Link>
@@ -157,21 +181,17 @@ export default function Welcome() {
                                         </Link>
                                     </Button>
                                 ) : (
-                                    <>
-                                        <Button size="lg" asChild>
-                                            <Link href={register()}>
-                                                Create a free account
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            size="lg"
-                                            variant="outline"
-                                            asChild
-                                        >
-                                            <Link href={login()}>Log in</Link>
-                                        </Button>
-                                    </>
+                                    <Button size="lg" asChild>
+                                        <Link href={register()}>
+                                            Create a free account
+                                        </Link>
+                                    </Button>
                                 )}
+                                <Button size="lg" variant="outline" asChild>
+                                    <a href="#installation">
+                                        Installation guide
+                                    </a>
+                                </Button>
                             </div>
                         </div>
 
@@ -234,8 +254,8 @@ export default function Welcome() {
                                 From ingest to resolved in three steps
                             </h2>
                             <p className="mt-2 text-muted-foreground">
-                                No agents to babysit. Create a project, send
-                                events, and work the queue.
+                                Create a project, install the Laravel SDK, and
+                                work the queue.
                             </p>
                         </div>
                         <ol className="grid gap-6 md:grid-cols-3">
@@ -258,6 +278,134 @@ export default function Welcome() {
                         </ol>
                     </section>
 
+                    <section
+                        id="installation"
+                        className="scroll-mt-20 border-t bg-muted/40"
+                    >
+                        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16">
+                            <div className="max-w-2xl">
+                                <h2 className="text-2xl font-semibold tracking-tight">
+                                    Installation guide
+                                </h2>
+                                <p className="mt-2 text-muted-foreground">
+                                    After you register, install the Laravel SDK
+                                    in the app you want to monitor. The package
+                                    lives on GitHub, so Composer needs a VCS
+                                    repository before it can require it.
+                                </p>
+                            </div>
+
+                            <ol className="flex flex-col gap-6">
+                                <InstallStep
+                                    step="1"
+                                    title="Create an account and a project"
+                                >
+                                    <p>
+                                        Register, then create a project. Copy
+                                        the ingest key when it appears — that
+                                        value is your{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            MINISENTRY_API_TOKEN
+                                        </code>
+                                        . It cannot be shown again.
+                                    </p>
+                                    {!auth.user ? (
+                                        <Button asChild>
+                                            <Link href={register()}>
+                                                Create a free account
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <Button asChild>
+                                            <Link href={dashboardUrl}>
+                                                Open dashboard
+                                            </Link>
+                                        </Button>
+                                    )}
+                                </InstallStep>
+
+                                <InstallStep
+                                    step="2"
+                                    title="Point Composer at the GitHub repo"
+                                >
+                                    <p>
+                                        Add this{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            repositories
+                                        </code>{' '}
+                                        block to the{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            composer.json
+                                        </code>{' '}
+                                        of your Laravel app. The SDK is not on
+                                        Packagist.
+                                    </p>
+                                    <CodeSnippet
+                                        label="composer.json"
+                                        code={composerRepositories}
+                                    />
+                                </InstallStep>
+
+                                <InstallStep
+                                    step="3"
+                                    title="Require the SDK"
+                                >
+                                    <p>
+                                        Install{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            uniqueginun/minsent-sdk
+                                        </code>{' '}
+                                        at{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            v1.0.3
+                                        </code>
+                                        . You can require it from the CLI or add
+                                        it to{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            composer.json
+                                        </code>
+                                        .
+                                    </p>
+                                    <CodeSnippet
+                                        label="Terminal"
+                                        code={composerRequireCommand}
+                                    />
+                                    <CodeSnippet
+                                        label="composer.json require"
+                                        code={composerPackage}
+                                    />
+                                </InstallStep>
+
+                                <InstallStep
+                                    step="4"
+                                    title="Set the environment variables"
+                                >
+                                    <p>
+                                        Add these values to the{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            .env
+                                        </code>{' '}
+                                        file of your Laravel app. Paste the
+                                        project ingest key into{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            MINISENTRY_API_TOKEN
+                                        </code>
+                                        . Set{' '}
+                                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                                            MINISENTRY_RELEASE
+                                        </code>{' '}
+                                        to the version you are deploying, if you
+                                        track releases.
+                                    </p>
+                                    <CodeSnippet
+                                        label=".env"
+                                        code={envVars}
+                                    />
+                                </InstallStep>
+                            </ol>
+                        </div>
+                    </section>
+
                     <section className="border-t">
                         <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-6 px-6 py-16 sm:flex-row sm:items-center">
                             <div className="max-w-xl">
@@ -265,22 +413,31 @@ export default function Welcome() {
                                     Start tracking errors today
                                 </h2>
                                 <p className="mt-2 text-muted-foreground">
-                                    Create a team, add a project, and send your
-                                    first event. {name} keeps the rest of the
-                                    queue ready for you.
+                                    Create a team, add a project, then install
+                                    the SDK so {name} can start grouping your
+                                    errors.
                                 </p>
                             </div>
-                            {auth.user ? (
-                                <Button size="lg" asChild>
-                                    <Link href={dashboardUrl}>
-                                        Go to dashboard
-                                    </Link>
+                            <div className="flex flex-wrap items-center gap-3">
+                                {auth.user ? (
+                                    <Button size="lg" asChild>
+                                        <Link href={dashboardUrl}>
+                                            Go to dashboard
+                                        </Link>
+                                    </Button>
+                                ) : (
+                                    <Button size="lg" asChild>
+                                        <Link href={register()}>
+                                            Get started
+                                        </Link>
+                                    </Button>
+                                )}
+                                <Button size="lg" variant="outline" asChild>
+                                    <a href="#installation">
+                                        Installation guide
+                                    </a>
                                 </Button>
-                            ) : (
-                                <Button size="lg" asChild>
-                                    <Link href={register()}>Get started</Link>
-                                </Button>
-                            )}
+                            </div>
                         </div>
                     </section>
                 </main>
@@ -293,5 +450,56 @@ export default function Welcome() {
                 </footer>
             </div>
         </>
+    );
+}
+
+function InstallStep({
+    step,
+    title,
+    children,
+}: {
+    step: string;
+    title: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <li className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm">
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-muted-foreground">
+                    Step {step}
+                </span>
+                <h3 className="font-medium">{title}</h3>
+            </div>
+            <div className="flex flex-col gap-4 text-sm text-muted-foreground">
+                {children}
+            </div>
+        </li>
+    );
+}
+
+function CodeSnippet({ label, code }: { label: string; code: string }) {
+    const [copiedText, copy] = useClipboard();
+    const copied = copiedText === code;
+
+    return (
+        <div className="overflow-hidden rounded-lg border bg-background text-foreground">
+            <div className="flex items-center justify-between gap-2 border-b bg-muted/60 px-3 py-1.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                    {label}
+                </span>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copy(code)}
+                >
+                    {copied ? <Check /> : <Copy />}
+                    {copied ? 'Copied' : 'Copy'}
+                </Button>
+            </div>
+            <pre className="overflow-x-auto p-4">
+                <code className="font-mono text-sm">{code}</code>
+            </pre>
+        </div>
     );
 }
